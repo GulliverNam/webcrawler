@@ -5,10 +5,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class WebCraler {
 	private final static String[] params = {"/FSAG0404?id=1",
 										    "/FSAG0406?id=2",
 										    "/FSAG0403?id=3",
-										    "/FSAG0402?id=4",
+//										    "/FSAG0402?id=4",
 										    "/FSAG0405?id=5",
 										    "/FSAG0407?id=6",
 										    "/FSAG0408?id=10",
@@ -61,16 +61,18 @@ public class WebCraler {
 	        int size = apis.size();
 	        System.out.println("size: "+ size);
 	        
-//	        String originFilePath = ".\\data\\sample.xlsx";
-//	        File originFile = new File(originFilePath);
+	        String originFilePath = ".\\data\\sample.xlsx";
+	        File originFile = new File(originFilePath);
 	        for(int i=0; i<size; i++) {
 	        	Element api = apis.get(i);
 	        	Elements head = api.getElementsByClass("board_list left").get(0).getElementsByTag("tbody").get(0).getElementsByTag("tr");
 	        	String[] apiName = head.get(2).getElementsByTag("td").get(0).text().split("/");
 	        	String apiDesc = head.get(3).getElementsByTag("td").get(0).text();
 	        	String copyfilePath = ".\\data\\"+String.join("_", apiName)+".xlsx";
-//	        	File copyFile = new File(copyfilePath);
-//	        	Files.copy(originFile.toPath(), copyFile.toPath());
+	        	File copyFile = new File(copyfilePath);
+	        	if(!copyFile.exists()) {
+	        		Files.copy(originFile.toPath(), copyFile.toPath());
+	        	}
 	        	System.out.println(copyfilePath);
 	        	System.out.println("###########################################");
 	        	Elements bodies = api.getElementsByClass("board_list row_line");
