@@ -30,11 +30,12 @@ public class WebCraler {
 	private final static String[] params = {"/FSAG0404?id=1",
 										    "/FSAG0406?id=2",
 										    "/FSAG0403?id=3",
-//										    "/FSAG0402?id=4",
+										    "/FSAG0402?id=4",
 										    "/FSAG0405?id=5",
 										    "/FSAG0407?id=6",
 										    "/FSAG0408?id=10",
-										    "/FSAG0409?id=11"};
+										    "/FSAG0409?id=11",
+										    "/FSAG0201?id=7"};
 	public static void main(String[] args) throws Exception {
 		ConnectionUtils.ignoreSSL();
 		URL url = null;
@@ -111,15 +112,19 @@ public class WebCraler {
 	        	descIdx = 2;
 	        	requireIdx = 3;
 	        	typeIdx = 4;
+	        	flag = false;
 	        	List<String[]> respList = new ArrayList<>();
 	        	for (int j = 0; j < bodySize; j++) {
 	        		Elements td = body2.get(j).getElementsByTag("td");
-	        		respList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
-	        		if(j == 0) {
+	        		if(flag) {
+	        			reqList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
+	        		}else if(td.get(0).text().equals("Parameter") || td.get(0).text().equals("Body")) {
+	        			reqList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
 						paramIdx--;
 						descIdx--;
 						requireIdx--;
 						typeIdx--;
+						flag = true;
 					}
 				}
 	        	for (String[] arr : respList) {
