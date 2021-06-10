@@ -1,3 +1,5 @@
 /bin/
 /data/*.xlsx
 !/data/sample.xlsx
+/data_backup/
+/data_req/
