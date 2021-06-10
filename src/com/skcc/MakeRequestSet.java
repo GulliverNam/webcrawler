@@ -25,7 +25,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class WebCraler {
+public class MakeRequestSet {
 	private final static String baseUrl = "https://developers.mydatakorea.org/mdtb/apg/mac/bas";
 	private final static String[] params = {"/FSAG0404?id=1",
 										    "/FSAG0406?id=2",
@@ -65,81 +65,89 @@ public class WebCraler {
 	        int size = apis.size();
 	        System.out.println("size: "+ size);
 	        
-	        String originFilePath = ".\\data\\sample.xlsx";
+	        String originFilePath = ".\\data_req\\sample.xlsx";
 	        File originFile = new File(originFilePath);
 	        for(int i=0; i<size; i++) {
 	        	Element api = apis.get(i);
 	        	Elements head = api.getElementsByClass("board_list left").get(0).getElementsByTag("tbody").get(0).getElementsByTag("tr");
 	        	String[] apiName = head.get(2).getElementsByTag("td").get(0).text().split("/");
 	        	String apiDesc = head.get(3).getElementsByTag("td").get(0).text();
-	        	String copyfilePath = ".\\data\\"+String.join("_", apiName)+".xlsx";
+	        	String copyfilePath = ".\\data_req\\"+String.join("_", apiName)+".xlsx";
 	        	File copyFile = new File(copyfilePath);
 	        	if(!copyFile.exists()) {
 	        		Files.copy(originFile.toPath(), copyFile.toPath());
 	        	}
 	        	System.out.println(copyfilePath);
 	        	System.out.println("###########################################");
-	        	Elements bodies = api.getElementsByClass("board_list row_line");
-	        	Elements body1 = bodies.get(0).getElementsByTag("tbody").get(0).getElementsByTag("tr");
+	        	Elements table = api.getElementsByClass("board_list row_line");
+	        	Elements requestData = table.get(0).getElementsByTag("tbody").get(0).getElementsByTag("tr");
 	        	
-	        	int bodySize = body1.size();
-	        	int paramIdx = 1;
-	        	int descIdx = 2;
-	        	int requireIdx = 3;
-	        	int typeIdx = 4;
-	        	boolean flag = false;
-	        	List<String[]> reqList = new ArrayList<>();
+	        	int bodySize = requestData.size();
+	        	int contentIdIdx = 0;
+	        	int contentNameIdx = 1;
+	        	int requireIdx = 2;
+	        	int typeLengthIdx = 3;
+	        	int descIdx = 4;
+	        	String headerBody = null;
+	        	List<API> reqList = new ArrayList<>();
+	        	System.out.println("bodySize: "+bodySize);
 	        	for (int j = 0; j < bodySize; j++) {
-	        		Elements td = body1.get(j).getElementsByTag("td");
-	        		if(flag) {
-	        			reqList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
-	        		}else if(td.get(0).text().equals("Parameter") || td.get(0).text().equals("Body")) {
-	        			reqList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
-						paramIdx--;
-						descIdx--;
-						requireIdx--;
-						typeIdx--;
-						flag = true;
-					}
+	        		Elements td = requestData.get(j).getElementsByTag("td");
+	        		Elements tdBdr = requestData.get(j).getElementsByClass("bdr");
+	        		if(!tdBdr.text().equals("")) {
+	        			headerBody = tdBdr.text();
+	        			reqList.add(new API(String.join("/", apiName), headerBody, 
+	        					td.get(contentIdIdx+1).text(), td.get(contentNameIdx+1).text(), 
+	        					td.get(typeLengthIdx+1).text(), "Y".equals(td.get(requireIdx+1).text()) ? true:false,
+	        					td.get(descIdx+1).text()));
+	        		} else {
+	        			reqList.add(new API(String.join("/", apiName), headerBody, 
+	        					td.get(contentIdIdx).text(), td.get(contentNameIdx).text(), 
+	        					td.get(typeLengthIdx).text(), "Y".equals(td.get(requireIdx).text()) ? true:false,
+	        					td.get(descIdx).text()));
+	        		}
 				}
-	        	for (String[] arr : reqList) {
-					System.out.println(arr[0]+" "+arr[1]+" "+arr[2]);
+	        	for (API temp : reqList) {
+					System.out.println(temp);
 				}
 	        	
 	        	
 	        	createData(copyfilePath, reqList, "I", 2);
 	        	System.out.println("###########################################");
-	        	Elements body2 = bodies.get(1).getElementsByTag("tbody").get(0).getElementsByTag("tr");
-	        	bodySize = body2.size();
-	        	paramIdx = 1;
-	        	descIdx = 2;
-	        	requireIdx = 3;
-	        	typeIdx = 4;
-	        	flag = false;
-	        	List<String[]> respList = new ArrayList<>();
+	        	Elements responseData = table.get(1).getElementsByTag("tbody").get(0).getElementsByTag("tr");
+	        	bodySize = responseData.size();
+	        	System.out.println("bodySize: "+bodySize);
+	        	List<API> respList = new ArrayList<>();
 	        	for (int j = 0; j < bodySize; j++) {
-	        		Elements td = body2.get(j).getElementsByTag("td");
-	        		if(flag) {
-	        			respList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
-	        		}else if(td.get(0).text().equals("Parameter") || td.get(0).text().equals("Body")) {
-	        			respList.add(new String[] {td.get(paramIdx).text(), td.get(descIdx).text(), td.get(typeIdx).text(), td.get(requireIdx).text()});
-						paramIdx--;
-						descIdx--;
-						requireIdx--;
-						typeIdx--;
-						flag = true;
-					}
+	        		Elements td = responseData.get(j).getElementsByTag("td");
+	        		Elements tdBdr = responseData.get(j).getElementsByClass("bdr");
+	        		if(!tdBdr.text().equals("")) {
+	        			headerBody = tdBdr.text();
+	        			respList.add(new API(String.join("/", apiName), headerBody, 
+	        					td.get(contentIdIdx+1).text(), td.get(contentNameIdx+1).text(), 
+	        					td.get(typeLengthIdx+1).text(), "Y".equals(td.get(requireIdx+1).text()) ? true:false,
+	        					td.get(descIdx+1).text()));
+	        		} else {
+	        			respList.add(new API(String.join("/", apiName), headerBody, 
+	        					td.get(contentIdIdx).text(), td.get(contentNameIdx).text(), 
+	        					td.get(typeLengthIdx).text(), "Y".equals(td.get(requireIdx).text()) ? true:false,
+	        					td.get(descIdx).text()));
+	        		}
 				}
-	        	for (String[] arr : respList) {
-					System.out.println(arr[0]+" "+arr[1]+" "+arr[2]);
+	        	for (API temp : respList) {
+					System.out.println(temp);
 				}
 	        	createData(copyfilePath, respList, "O", 2+reqList.size());
 	        	System.out.println("###########################################");
 	        }
 			
 		}
+		FileOutputStream fos = new FileOutputStream(filePath);
+    	workbook.write(fos);
+    	fos.close();
+    	fis.close();
 	}
-	private static void createData(String filePath, List<String[]> List, String IO, int rowSize) throws IOException, InvalidFormatException {
+	private static void createData(List<API> List, String IO, int rowSize) throws IOException, InvalidFormatException {
 		
 		FileInputStream fis = new FileInputStream(filePath);
     	XSSFWorkbook workbook = new XSSFWorkbook(fis);
@@ -148,46 +156,54 @@ public class WebCraler {
     	XSSFRow row;
     	String parentId = "";
     	for(int i = 0, listSize = List.size(); i < listSize; i++) {
-    		String[] tmp = List.get(i);
+    		API api = List.get(i);
     		row = sheet.createRow(i+rowSize);
-    		// 0. 입력/출력(I,O)
-    		row.createCell(0).setCellValue(IO);
-    		String id = tmp[0].replaceAll("-", "");
+    		// 0. API ID
+    		row.createCell(0).setCellValue(api.getApiId());
+    		// 1. 입력/출력(I,O) & 헤드/바디(H,B)
+    		String headBody = "";
+    		if("Header".equals(api.getHeaderBody())) {
+    			IO += "H";
+    		} else {
+    			IO += "B";
+    		}
+    		row.createCell(1).setCellValue(IO);
+    		String id = api[0].replaceAll("-", "");
     		String[] UIOType = null;
     		String referLength = "";
     		// 2. 상위항목
     		row.createCell(2).setCellValue(parentId);
     		// 1. 항목유형(F,R)
-			if(tmp[2].toLowerCase().contains("object")) {
+			if(api[2].toLowerCase().contains("object")) {
     			row.createCell(1).setCellValue("R");
     			UIOType = new String[] {"", ""};
     			if(!"".equals(parentId)) {
     				parentId += ".";
     			}
-    			parentId += tmp[0].replaceAll("-", "");
+    			parentId += api[0].replaceAll("-", "");
     			referLength = List.get(i-1)[0].replaceAll("-", "");
 			} else {
 				row.createCell(1).setCellValue("F");
 			}
 			
 			String checkLogic = "";
-			if(id.contains("timestamp") || tmp[2].toLowerCase().contains("dtime")) {
+			if(id.contains("timestamp") || api[2].toLowerCase().contains("dtime")) {
 				UIOType = new String[] {"string", "14"};
 				checkLogic = "timestamp14_check";
-			} else if(tmp[2].toLowerCase().contains("date")) {
+			} else if(api[2].toLowerCase().contains("date")) {
 				UIOType = new String[] {"string", "8"};
 				checkLogic = "date_check";
-			} else if(tmp[2].toLowerCase().contains("boolean")) {
+			} else if(api[2].toLowerCase().contains("boolean")) {
 				UIOType = new String[] {"string", "5"};
 				checkLogic = "boolean_check";
 			} else if(UIOType == null) {
-				UIOType = getUIOType(tmp[2]);
+				UIOType = getUIOType(api[2]);
 			}
 			
 			// 3. 항목
 			row.createCell(3).setCellValue(id);
 			// 4. 항목명
-			row.createCell(4).setCellValue(tmp[1]);
+			row.createCell(4).setCellValue(api[1]);
 			// 5. 길이
 			row.createCell(5).setCellValue(UIOType[1]);
 			// 6. 길이참조(RecordSet 일때)
@@ -196,16 +212,13 @@ public class WebCraler {
 			row.createCell(7).setCellValue(UIOType[0]);
 			
 			// 10. 필수검증 (Y/N)
-			if(tmp[3].equals("Y")) {
+			if(api[3].equals("Y")) {
 				row.createCell(10).setCellValue("mandatory");
 			}
 			// 11. 검증로직 (timestamp14_check, date_check, boolean_check)
 			row.createCell(11).setCellValue(checkLogic);
     	}
-    	FileOutputStream fos = new FileOutputStream(filePath);
-    	workbook.write(fos);
-    	fos.close();
-    	fis.close();
+    	
 	}
 	private static String[] getUIOType(String mydataType) {
 		String[] arr = mydataType.split("\\(");
