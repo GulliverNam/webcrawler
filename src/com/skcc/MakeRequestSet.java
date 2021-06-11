@@ -45,6 +45,10 @@ public class MakeRequestSet {
 		ConnectionUtils.ignoreSSL();
 		URL url = null;
 		String filePath = ".\\data_req\\result.xlsx";
+		File file = new File(filePath);
+		if(!file.exists()) {
+			file.createNewFile();
+		}
     	XSSFWorkbook workbook = new XSSFWorkbook();
     	XSSFSheet sheet = workbook.createSheet("IO_LIST");
 		for(String param : params) {
@@ -166,22 +170,24 @@ public class MakeRequestSet {
     		if(!"".equals(parentId)) {
     			api.setContentId(api.getContentId().replaceAll("-", ""));
     		}
+    		String itemType = "";
     		// 3. 상위항목
     		row.createCell(3).setCellValue(parentId);
     		// 2. 항목유형(F,R)
 			if(api.getTypeLength().toLowerCase().contains("object")) {
-    			row.createCell(2).setCellValue("R");
-    			UIOType = new String[] {"", ""};
+				itemType = "R";
+    			
+    			UIOType = new String[] {"", null};
     			if(!"".equals(parentId)) {
     				parentId += ".";
     			}
     			parentId += api.getContentId();
     			API refer = list.get(i-1);
-    			referLength = list.get(i-1).getContentId();
+    			referLength = refer.getContentId();
 			} else {
-				row.createCell(2).setCellValue("F");
+				itemType = "F";
 			}
-			
+			row.createCell(2).setCellValue(itemType);
 			String checkLogic = "";
 			if(api.getContentId().contains("timestamp") || api.getTypeLength().toLowerCase().contains("dtime")) {
 				UIOType = new String[] {"string", "14"};
@@ -221,6 +227,34 @@ public class MakeRequestSet {
 			
 			// 13. 설명
 			row.createCell(13).setCellValue(api.getDescription());
+			/**
+    		 *  1	APIID
+				2	입출력구분코드
+				3	필드순번
+				4	항목유형코드
+				5	항목ID
+				6	항목명
+				7	항목길이
+				8	길이참조
+				9	데이터타입코드
+				10	상위항목ID
+				11	입력필수여부
+				12	입력참조값
+				14	최종변경사용자ID
+				15	최종변경일시
+    		 */
+			// 14. query
+			String queryParentId = row.getCell(3).getStringCellValue();
+			String query = String.format("INTO TB_API_LST_D(API_ID, IO_GCD, ITM_SNO, ITM_KCD, ITM_ID, "
+												  				+ "ITM_NM, ITM_LEN, ITM_LEN_RF_VAL, ITM_DTA_TCD, UP_ITM_ID, "
+												  				+ "IN_YN, LST_CHG_USID, LST_CHG_DTM)"
+									   + "VALUES ('%s', '%s', %s, '%s', '%s', "
+									   		   + "'%s', %s, '%s', '%s', %s, "
+									   		   + "'%s', '%s', %s)"
+						   ,api.getApiId(), IOheadBody, rowSize, itemType, api.getContentId(),
+						   api.getContentName(), UIOType[1], referLength, UIOType[0], queryParentId == null ? null: "'"+queryParentId+"'",
+						   api.isRequired() ? "Y":"N", "system", "sysdate");
+			row.createCell(14).setCellValue(query);
     	}
     	
 	}
