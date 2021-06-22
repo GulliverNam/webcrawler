@@ -70,9 +70,10 @@ public class WebCraler {
 	        for(int i=0; i<size; i++) {
 	        	Element api = apis.get(i);
 	        	Elements head = api.getElementsByClass("board_list left").get(0).getElementsByTag("tbody").get(0).getElementsByTag("tr");
-	        	String[] apiName = head.get(2).getElementsByTag("td").get(0).text().split("/");
+	        	String apiName = head.get(0).getElementsByTag("td").get(0).text();
+	        	String[] apiUrl = head.get(2).getElementsByTag("td").get(0).text().split("/");
 	        	String apiDesc = head.get(3).getElementsByTag("td").get(0).text();
-	        	String copyfilePath = ".\\data\\"+String.join("_", apiName)+".xlsx";
+	        	String copyfilePath = ".\\data\\"+apiName+String.join("_", apiUrl)+".xlsx";
 	        	File copyFile = new File(copyfilePath);
 	        	if(!copyFile.exists()) {
 	        		Files.copy(originFile.toPath(), copyFile.toPath());
